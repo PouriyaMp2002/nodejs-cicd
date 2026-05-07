@@ -1,0 +1,24 @@
+plugin: amazon.aws.aws_ec2
+
+regions:
+  - us-east-1
+
+filters:
+  instance-state-name:
+    - running
+  tag:Project:
+    - nodejs-devops
+
+hostnames:
+  - tag:Name
+  - private-ip-address
+
+compose:
+  ansible_host: private_ip_address
+  ansible_user: "'ubuntu'"
+  ansible_ssh_private_key_file: "'/var/lib/jenkins/.ssh/devops.pem'"
+
+groups:
+  jenkins: tags.get('Role') == 'jenkins'
+  deploy: tags.get('Role') == 'deploy'
+  sonar: tags.get('Role') == 'sonar'

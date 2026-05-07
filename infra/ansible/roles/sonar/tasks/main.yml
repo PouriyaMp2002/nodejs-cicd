@@ -1,0 +1,73 @@
+# ---------- SONARQUBE ----------
+- name: Set vm.max_map_count
+  ansible.builtin.sysctl:
+    name: vm.max_map_count
+    value: "524288"
+    state: present
+    reload: yes
+
+- name: Set fs.file-max
+  ansible.builtin.sysctl:
+    name: fs.file-max
+    value: "131072"
+    state: present
+    reload: yes
+
+- name: Create SonarQube directory
+  ansible.builtin.file:
+    path: /opt/sonarqube
+    state: directory
+    mode: "0755"
+
+- name: Create SonarQube compose file
+  ansible.builtin.copy:
+    dest: /opt/sonarqube/docker-compose.yml
+    mode: "0600"
+    content: |
+      services:
+
+        postgres:
+          image: postgres:16
+          container_name: sonarqube-postgres
+          restart: unless-stopped
+          environment:
+            POSTGRES_USER: "{{ sonar_db_user }}"
+            POSTGRES_PASSWORD: "{{ sonar_db_password }}"
+            POSTGRES_DB: "{{ sonar_db_name }}"
+          volumes:
+            - postgresql_data:/var/lib/postgresql/data
+
+        sonarqube:
+          image: sonarqube:community
+          container_name: sonarqube
+          restart: unless-stopped
+          depends_on:
+            - postgres
+          ports:
+            - "9000:9000"
+
+          environment:
+            SONAR_JDBC_URL: "jdbc:postgresql://postgres:5432/{{ sonar_db_name }}"
+            SONAR_JDBC_USERNAME: "{{ sonar_db_user }}"
+            SONAR_JDBC_PASSWORD: "{{ sonar_db_password }}"
+
+          volumes:
+            - sonarqube_data:/opt/sonarqube/data
+            - sonarqube_extensions:/opt/sonarqube/extensions
+            - sonarqube_logs:/opt/sonarqube/logs
+
+      volumes:
+        sonarqube_data:
+        sonarqube_extensions:
+        sonarqube_logs:
+        postgresql_data:
+
+- name: Pull latest SonarQube image
+  ansible.builtin.command: docker compose pull
+  args:
+    chdir: /opt/sonarqube
+
+- name: Run SonarQube
+  ansible.builtin.command: docker compose up -d
+  args:
+    chdir: /opt/sonarqube

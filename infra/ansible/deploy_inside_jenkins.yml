@@ -1,0 +1,82 @@
+---
+
+- name: Deploy application on deploy server
+  hosts: deploy
+  become: true
+
+  vars:
+    app_dir: /opt/nodeapp
+    app_name: nodeapp
+    app_port: 3000
+
+  tasks:
+    - name: Ensure app directory exists
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Render application env file
+      ansible.builtin.template:
+        src: templates/app.env.j2
+        dest: "{{ app_dir }}/.env"
+        mode: "0600"
+
+    - name: Render compose variable file
+      ansible.builtin.copy:
+        dest: "{{ app_dir }}/.compose.env"
+        mode: "0600"
+        content: |
+          IMAGE_URI={{ image_uri }}
+          APP_PORT={{ app_port }}
+
+    - name: Render docker compose file
+      ansible.builtin.template:
+        src: templates/docker-compose.app.yml.j2
+        dest: "{{ app_dir }}/docker-compose.yml"
+        mode: "0644"
+
+    - name: Pull latest application image
+      ansible.builtin.shell: |
+        set -e
+        cd {{ app_dir }}
+        docker compose --env-file .compose.env pull
+      args:
+        executable: /bin/bash
+
+    - name: Start database
+      ansible.builtin.shell: |
+        set -e
+        cd {{ app_dir }}
+        docker compose --env-file .compose.env up -d db
+      args:
+        executable: /bin/bash
+
+    - name: Run database migrations
+      ansible.builtin.shell: |
+        set -e
+        docker run --rm \
+          --network nodeapp_default \
+          --env-file {{ app_dir }}/.env \
+          {{ image_uri }} \
+          npx prisma migrate deploy
+      args:
+        executable: /bin/bash
+
+    - name: Start application with docker compose
+      ansible.builtin.shell: |
+        set -e
+        cd {{ app_dir }}
+        docker compose --env-file .compose.env up -d app
+      args:
+        executable: /bin/bash
+
+    - name: Wait for application health check
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ app_port }}/health"
+        method: GET
+        status_code: 200
+      register: health_result
+      retries: 12
+      delay: 5
+      until: health_result.status == 200

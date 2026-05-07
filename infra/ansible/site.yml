@@ -1,0 +1,24 @@
+--- 
+- name: Common setup on all servers
+  hosts: all
+  become: true
+  roles:
+    - common
+
+- name: Setup Jenkins servers
+  hosts: jenkins
+  become: true
+  roles: 
+    - jenkins
+
+- name: Setup SonarQube servers
+  hosts: sonar
+  become: true
+  roles: 
+    - sonar
+
+- name: Setup deploy servers
+  hosts: deploy 
+  become: true
+  roles:
+    - deploy

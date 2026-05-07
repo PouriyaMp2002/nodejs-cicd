@@ -1,0 +1,9 @@
+# It's better for you to encrypt this file with ansible vault, Then run this command: 
+# ansible-playbook -i inventory.yml site.yml --ask-vault-pass ==> Use this if you want to enter password manually. 
+# If you password file, use this: ansible-playbook -i inventory.yml site.yml --vault-password-file ~/.vault_pass
+
+sonar_db_user: sonar
+sonar_db_password: "sonar-db-pass"
+sonar_db_name: sonarqube
+
+# If you encrypt this with ansible vault, you can't see sensitive data.
