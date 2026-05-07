@@ -15,8 +15,10 @@ provider "aws" {
 #   bucket = "bucket-name-ex"
 # }
 
-# If you don't have s3 bucket, you should create it, then use backup.tf (after applying).check 
-#it's better to create s3, then use this terraform code. 
+# Terraform needs a remote backend, usually an S3 bucket. There are two options:
+
+# Option A: Create the S3 bucket manually first, then configure Terraform backend.
+# Option B: Create the S3 bucket with Terraform first (like here),apply the terraform, then add the backend and migrate state.
 
 data "http" "my_ip" {
   url = "https://checkip.amazonaws.com/"
