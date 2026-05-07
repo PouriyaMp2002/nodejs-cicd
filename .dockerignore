@@ -1,0 +1,11 @@
+.env
+node_modules
+*.log
+.git
+Infra
+monitoring
+file.groovy 
+*.md
+Dockerfile
+docker-compose.yml
+.vscode
