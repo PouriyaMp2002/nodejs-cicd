@@ -1,0 +1,15 @@
+# Terraform: 
+Infra/terraform/.terraform/*
+*.tfstate
+*.tfstate*
+
+#Credentials:
+*.vault_pass
+.env
+
+#Keys:
+*.pub
+*.pem
+
+# Extra files
+/node_modules
