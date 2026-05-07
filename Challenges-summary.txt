@@ -1,0 +1,102 @@
+These are my challenges when I was building the project.
+
+1. SSH Access Between Jenkins and Deploy Server
+
+Jenkins must be able to connect to the deploy server using SSH. Do not commit private keys into the project repository.
+Keep the private key on the Jenkins machine or store it as a Jenkins credential. The matching public key must be added to the deploy server in the correct user's authorized_keys file.
+
+
+Common issues:
+- Jenkins user cannot read the private key.
+- known_hosts has wrong permissions.
+- Host key verification fails.
+- Security group does not allow SSH from Jenkins to deploy server.
+- Root can SSH, but Jenkins cannot because Jenkins is using a different key or permissions.
+
+Required permissions => create a directory for jenkins user in order to connect to deploy machine with SSH with these commands: 
+
+sudo mkdir -p /var/lib/jenkins/.ssh
+sudo cp [Private_key-path] /var/lib/jenkins/.ssh
+sudo chown jenkins:jenkins /var/lib/jenkins/.ssh/private-key.pem
+sudo chmod 600 [private-key]
+sudo chown jenkins:jenkins /var/lib/jenkins/.ssh
+sudo chmod 700 /var/lib/jenkins/.ssh
+
+Then test it with this command. If it works, then it'll work on your pipeline: 
+	sudo -u jenkins ssh -i /var/lib/jenkins/.ssh/devops.pem ubuntu@DEPLOY_PRIVATE_IP
+
+2. Sonarqube
+== Sonarqube webhook: http://[jenkins' private-ip]:9000/sonarqube-webhook/
+== Github webhook: http://[jenkins' public-ip]:8080/github-webhook/
+
+Generate a webhook secret:
+"openssl rand -hex 32"
+
+Paste the secret in both side in order to be encrypted the connection.
+save it like a secret variable.
+
+SonarQube Configuration
+
+In Jenkins, configure the SonarQube server:
+
+Manage Jenkins > System > SonarQube servers
+The SonarQube server name in Jenkins must match the name used in the Jenkins pipeline.
+Pay attention: Go to user and generate a token in SONARQUBE, then paste it on jenkins
+as a sonar token. if you don't do this, it won't connect.
+
+3. Required plugins on Jenkins Machine
+- AWS credentials
+- Docker pipeline
+- Sonarqube scanner 
+- Sonar Quality Gate
+
+4. Jenkins User Access to Docker
+
+Docker may work as root but fail for Jenkins. Add Jenkins to the docker group:
+Commands: 
+
+	sudo usermod -aG docker jenkins
+	sudo systemctl restart jenkins
+Test:
+sudo -u jenkins docker ps
+
+
+5. Jenkins Credentials
+
+Store secrets in Jenkins Credentials, not directly in the Jenkinsfile.
+
+Useful credentials:
+
+- Docker Hub username/password
+- GitHub token or credentials
+- GitHub webhook secret
+- SonarQube server token
+- SonarQube webhook secret
+- AWS access key ID
+- AWS secret access key
+- SSH private key for deploy server
+- Database URL
+- POSTGRES_USER
+- POSTGRES_PASSWORD
+- POSTGRES_DB
+
+**Credential IDs must match the IDs used in the Jenkins pipeline.**
+
+
+6. Database Configuration
+
+If using Docker Compose with a Postgres service called db, the app should connect to Postgres using the Compose service name:
+
+postgresql://myuser:mypassword@db:5432/postgresdb (this is an example about database url)
+
+
+
+7. Main Lessons Learned
+
+- Secrets should be stored in Jenkins, not in the repository.
+- Jenkins needs correct Linux permissions for SSH keys and Docker access.
+- Root access and Jenkins access are different; always test as the Jenkins user.
+- Docker Compose containers talk to each other by service name.
+- The Docker image must be pushed before the deploy server can pull it.
+- Webhook URLs and secrets must match exactly.
+- Security groups must allow the correct source, port, and direction.
