@@ -1,0 +1,35 @@
+services:
+  db: 
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: "{{ POSTGRES_USER }}"
+      POSTGRES_PASSWORD: "{{ POSTGRES_PASSWORD }}"
+      POSTGRES_DB: "{{ POSTGRES_DB }}"
+    ports:
+      - '5431:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d mydb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app: 
+    build: .
+    depends_on:
+      db: 
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "{{ DATABASE_URL }}"
+      NODE_ENV: development
+      LOG_LEVEL: info
+      PORT: 3000
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/app
+    command: sh -c "npm run db:migrate && npm run dev"
+
+  
