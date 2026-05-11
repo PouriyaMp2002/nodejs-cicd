@@ -82,7 +82,7 @@ AWS EC2 Deploy Server
 │
 ├── Dockerfile                      # Multi-stage production Docker image
 ├── docker-compose.yml              # Local Docker Compose setup
-├── file.groovy                     # Jenkins pipeline
+├── Jenkinsfile                     # Jenkins pipeline
 ├── package.json                    # Node.js scripts and dependencies
 ├── tsconfig.json                   # TypeScript configuration
 ├── jest.config.ts                  # Jest configuration
@@ -217,7 +217,7 @@ The bootstrap playbook should be run before the Jenkins deployment pipeline.
 The Jenkins pipeline is defined in:
 
 ```bash
-file.groovy
+Jenkinsfile
 ```
 
 The pipeline automates testing, building, scanning, image publishing, and deployment.
